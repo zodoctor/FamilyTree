@@ -12,27 +12,30 @@ class Person:
         parent2 = None,
         parents = None,
         children = None,
-        ID = None
+        ID = None,
+        spouses=None,
     ):
         # set up name
         self.first_name = first_name
-        self.last 
+        
         if last_name:
             self.name = ' '.join([first_name,last_name])
+            self.last_name = last_name
         else:
             self.name = first_name
+            self.last_name = None
         
         # set up unique identifier
         if ID is None:
-            num = str.encode(name)
-            self.ID = int.from_bytes(num)
+            num = str.encode(self.name)
+            self.ID = int.from_bytes(num,byteorder='big',signed=False)
         else:
             self.ID = ID
 
         # set up parents
         if parents:
             self.parents = parents
-        elif (parent1 is not None) or (parent2 is not None):
+        else:
             self.parents = []
             if parent1: 
                 self.parents.append(parent1)
@@ -40,13 +43,16 @@ class Person:
             if parent2: 
                 self.parents.append(parent2)
                 self.father = parent2
-        else:
-            self.parents = None
        
         # set up children
         self.children = []
         if children:
             self.add_children(children)
+
+        # set up spouses
+        self.spouses = []
+        if spouses:
+            self.add_spouses(spouses)
 
     def add_child(self,child):
         self.children.append(child)
@@ -54,6 +60,20 @@ class Person:
     def add_children(self,children):
         for child in children:
             self.add_child(child) 
+
+    def add_spouse(self,spouse):
+        self.spouses.append(spouse)
+    
+    def add_spouses(self,spouses):
+        for spouse in spouses:
+            self.add_spouse(spouse)
+
+    def add_parent(self,parent):
+        self.parents.append(parent)
+    
+    def add_parents(self,parents):
+        for parent in parents:
+            self.add_parent(parent)
 
     def get_oldest_ancestors(self):
         ancestors = []
@@ -86,13 +106,27 @@ def draw_parents_tree(person1,person2=None,figax=None):
         else:
             if (person1 in child.parents) and (person2 in child.parents):
                 n_children += 1
-    
+    for i in range(n_children):
+        ax.axvline(1./(2.*n_children) + float(i)/n_children,0,0.6)
+    return fig,ax    
 
 def draw_tree(people):
     ancestors = np.unique([person.get_oldest_ancestors() for person in people])
     
     # find number of generations and number 
     # of cousins at bottom of tree to size figure
-    generations = max([person.get_number_of_generations_of_decendants() for person in people])
-    
+    generations = max([person.get_number_of_generations_of_decendants() for person in ancestors])
 
+if __name__=="__main__":
+    mom = Person("mom")
+    dad = Person("dad")
+    bro = Person("bro")
+    sis = Person("sis")
+    mom.add_children([bro,sis])
+    dad.add_children([bro,sis])
+    mom.add_spouse(dad)
+    dad.add_spouse(mom)
+    bro.add_parents([mom,dad])
+    sis.add_parents([mom,dad])
+    fig,ax = draw_parents_tree(mom,dad)
+    fig.savefig('test.png')
